@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>The Seasonal Night Sky — Version 5</title>
+<style>
+  :root{
+    --bg:#07111f;
+    --panel:#0e1d31;
+    --panel2:#112740;
+    --ink:#edf5ff;
+    --muted:#a9bed8;
+    --accent:#79c5ff;
+    --accent2:#ffd166;
+    --line:#29435f;
+    --good:#8ee3b0;
+    --danger:#ff9a9a;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    background:radial-gradient(circle at top,#102744 0,#07111f 45%,#040913 100%);
+    color:var(--ink);
+  }
+  .wrap{max-width:1450px;margin:0 auto;padding:22px}
+  header{
+    display:flex;gap:18px;align-items:flex-start;justify-content:space-between;
+    margin-bottom:16px;flex-wrap:wrap
+  }
+  h1{margin:0 0 6px;font-size:clamp(1.8rem,3vw,3rem);letter-spacing:.01em}
+  .subtitle{color:var(--muted);max-width:920px;line-height:1.45}
+  .badge{background:#173655;border:1px solid #2d5b83;color:#dff2ff;padding:8px 12px;border-radius:999px;font-size:.9rem}
+  .controls{
+    background:rgba(14,29,49,.92);border:1px solid var(--line);border-radius:18px;
+    padding:16px;margin-bottom:16px;box-shadow:0 10px 30px rgba(0,0,0,.2)
+  }
+  .control-grid{
+    display:grid;grid-template-columns:minmax(260px,2fr) minmax(230px,1fr) auto;
+    gap:18px;align-items:center
+  }
+  @media(max-width:900px){.control-grid{grid-template-columns:1fr}}
+  label{font-weight:700}
+  .small{font-size:.9rem;color:var(--muted)}
+  input[type=range]{width:100%;accent-color:var(--accent)}
+  .value{font-variant-numeric:tabular-nums;color:var(--accent2);font-weight:800}
+  .buttons{display:flex;gap:8px;flex-wrap:wrap}
+  button{
+    background:#173655;color:var(--ink);border:1px solid #35597b;border-radius:10px;
+    padding:9px 12px;cursor:pointer;font-weight:700
+  }
+  button:hover{background:#21496f}
+  button.active{outline:2px solid var(--accent2);background:#254f74}
+  .main{
+    display:grid;grid-template-columns:minmax(0,1.06fr) minmax(0,.94fr);gap:16px
+  }
+  @media(max-width:1050px){.main{grid-template-columns:1fr}}
+  .panel{
+    background:rgba(14,29,49,.94);border:1px solid var(--line);border-radius:18px;
+    overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.22)
+  }
+  .panel h2{font-size:1.12rem;margin:0;padding:14px 16px;border-bottom:1px solid var(--line)}
+  .canvasWrap{position:relative;aspect-ratio:1.18/1;background:#030813}
+  canvas{display:block;width:100%;height:100%}
+  .legend{
+    padding:10px 14px;color:var(--muted);font-size:.88rem;border-top:1px solid var(--line);
+    display:flex;gap:15px;flex-wrap:wrap
+  }
+  .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:middle}
+  .stats{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:12px 14px;background:#0a1728;border-top:1px solid var(--line)
+  }
+  .stat{padding:8px;border-radius:10px;background:#10243a}
+  .stat b{display:block;font-size:.8rem;color:var(--muted);margin-bottom:2px}
+  .stat span{font-size:1rem;font-weight:800}
+  .skyWrap{padding:12px}
+  #skyCanvas{aspect-ratio:1.55/1;border-radius:13px;border:1px solid #203b58;background:#020711}
+  .toggles{display:flex;gap:16px;flex-wrap:wrap;padding:0 14px 14px}
+  .toggles label{font-weight:600;color:#dbe9f8;font-size:.9rem}
+  .toggles input{vertical-align:-1px}
+  .explain{
+    margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:16px
+  }
+  @media(max-width:900px){.explain{grid-template-columns:1fr}}
+  .card{
+    background:rgba(14,29,49,.94);border:1px solid var(--line);border-radius:16px;padding:16px
+  }
+  .card h3{margin:0 0 8px}
+  .card p{margin:.5em 0;color:#d8e6f6;line-height:1.45}
+  .question{border-left:4px solid var(--accent2)}
+  .answer{display:none;margin-top:10px;padding:10px;border-radius:10px;background:#10243a}
+  .answer.show{display:block}
+  .note{
+    margin-top:16px;color:var(--muted);font-size:.85rem;line-height:1.45;
+    background:rgba(5,13,24,.7);border:1px solid #1a3048;border-radius:12px;padding:12px
+  }
+  .kbd{border:1px solid #4c6780;border-bottom-width:2px;padding:1px 6px;border-radius:5px;background:#132a42}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>The Seasonal Night Sky</h1>
+      <div class="subtitle">
+        Explore why the constellations visible at night change as Earth revolves around the Sun.
+        Move through the year, then compare the space view with the simplified observer view.
+      </div>
+    </div>
+    <div class="badge">Astronomy • Chapter 1 concept model • Version 5</div>
+  </header>
+
+  <section class="controls">
+    <div class="control-grid">
+      <div>
+        <label for="day">Date: <span class="value" id="dateLabel"></span></label>
+        <input id="day" type="range" min="1" max="365" value="258" />
+        <div class="small">Drag slowly and watch the Sun's apparent constellation change.</div>
+      </div>
+
+      <div>
+        <label for="time">Local solar time: <span class="value" id="timeLabel"></span></label>
+        <input id="time" type="range" min="18" max="30" value="24" step=".25" />
+        <div class="small">18 = sunset-ish, 24 = midnight, 30 = sunrise-ish</div>
+      </div>
+
+      <div class="buttons">
+        <button data-day="79">March equinox</button>
+        <button data-day="172">June solstice</button>
+        <button data-day="266">September equinox</button>
+        <button data-day="355">December solstice</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="main">
+    <section class="panel">
+      <h2>1. Space view — north-pole perspective, Earth, Sun, and the zodiac</h2>
+      <div class="canvasWrap"><canvas id="spaceCanvas"></canvas></div>
+      <div class="stats">
+        <div class="stat"><b>Sun appears in</b><span id="sunConst"></span></div>
+        <div class="stat"><b>Opposite the Sun</b><span id="oppConst"></span></div>
+        <div class="stat"><b>Earth's orbital position</b><span id="seasonLabel"></span></div>
+      </div>
+      <div class="legend">
+        <span><span class="dot" style="background:#ffd166"></span>Sun</span>
+        <span><span class="dot" style="background:#63b8ff"></span>Earth</span>
+        <span><span class="dot" style="background:#f4f7fb"></span>observer</span>
+        <span><span class="dot" style="background:#8ee3b0"></span>local horizon / visible sky</span>
+        <span><span class="dot" style="background:rgba(142,227,176,.55)"></span>180° zodiac arc above the horizon</span>
+        <span>The shaded half of Earth is night.</span>
+        <span><b>Not to scale:</b> the zodiac background represents directions to extremely distant stars. The translucent outer arc marks the half of the zodiac that is above the observer's horizon at the selected time.</span>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>2. Observer view — Northern Hemisphere orientation</h2>
+      <div class="skyWrap"><canvas id="skyCanvas"></canvas></div>
+      <div class="toggles">
+        <label><input id="labels" type="checkbox" checked> constellation names</label>
+        <label><input id="sunDir" type="checkbox" checked> Sun direction</label>
+        <label><input id="midnightMarker" type="checkbox" checked> meridian marker</label>
+      </div>
+      <div class="legend">
+        This is a teaching model of the zodiac band, not a full planetarium view. East is on the left and west is on the right, matching the view of a Northern Hemisphere observer looking generally south along the zodiac. The center is the direction crossing the local meridian at the selected time.
+      </div>
+    </section>
+  </div>
+
+  <div class="explain">
+    <section class="card">
+      <h3>What to notice</h3>
+      <p id="explanation"></p>
+      <p class="small">
+        The key idea: constellations near the Sun's direction are washed out by daylight, while constellations roughly opposite the Sun are best placed for the middle of the night.
+      </p>
+    </section>
+
+    <section class="card question">
+      <h3>Quick challenge</h3>
+      <p id="questionText"></p>
+      <button id="reveal">Reveal answer</button>
+      <div id="answerBox" class="answer"></div>
+    </section>
+  </div>
+
+  <div class="note">
+    <b>Model limits:</b> This first version intentionally simplifies the sky to the ecliptic/zodiac band.
+    It does not yet calculate exact altitude, azimuth, latitude effects, atmospheric twilight, or the detailed shape of constellation boundaries.
+    The date ranges used for the Sun's astronomical zodiac constellations are approximate. The left-hand orbit is shown from above the north side of the ecliptic, so Earth revolves counterclockwise. The zodiac ring is schematic and is not drawn to scale; the stars are vastly farther away than Earth's orbit.
+  </div>
+</div>
+
+
+<script>
+const zodiacs = [
+  {name:"Aries", start:108, end:133},
+  {name:"Taurus", start:133, end:172},
+  {name:"Gemini", start:172, end:201},
+  {name:"Cancer", start:201, end:222},
+  {name:"Leo", start:222, end:260},
+  {name:"Virgo", start:260, end:304},
+  {name:"Libra", start:304, end:327},
+  {name:"Scorpius", start:327, end:333},
+  {name:"Ophiuchus", start:333, end:351},
+  {name:"Sagittarius", start:351, end:385},
+  {name:"Capricornus", start:20, end:47},
+  {name:"Aquarius", start:47, end:70},
+  {name:"Pisces", start:70, end:108}
+];
+function constellationForDay(d){
+  if(d < 20) return "Sagittarius";
+  for(const z of zodiacs){
+    if(d >= z.start && d < Math.min(z.end,366)) return z.name;
+  }
+  return "Sagittarius";
+}
+function wrap360(a){ return (a%360+360)%360; }
+function angleDiff(a,b){ let d=wrap360(a-b); if(d>180)d-=360; return d; }
+
+// Teaching-model solar longitude: March equinox ~ day 79 = 0°.
+// In V2, positive longitude is drawn counterclockwise in the north-pole view.
+function sunLongitude(day){ return wrap360((day-79) * 360/365); }
+function earthLongitude(day){ return wrap360(sunLongitude(day)+180); }
+
+function dateFromDay(day){
+  const mdays=[31,28,31,30,31,30,31,31,30,31,30,31];
+  const names=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  let d=day,m=0;
+  while(d>mdays[m]){d-=mdays[m];m++}
+  return `${names[m]} ${d}`;
+}
+function timeText(v){
+  let h=v%24, hh=Math.floor(h), min=Math.round((h-hh)*60);
+  if(min===60){hh=(hh+1)%24;min=0}
+  const ap=hh>=12?"PM":"AM";
+  let hr=hh%12;if(hr===0)hr=12;
+  return `${hr}:${String(min).padStart(2,"0")} ${ap}`;
+}
+function seasonName(day){
+  if(day>=355 || day<79) return "Northern winter";
+  if(day<172) return "Northern spring";
+  if(day<266) return "Northern summer";
+  return "Northern autumn";
+}
+function zodiacCenterAngle(z){
+  if(z.name==="Sagittarius"){
+    const centerDay=(351 + (385-351)/2);
+    return sunLongitude(((centerDay-1)%365)+1);
+  }
+  return sunLongitude((z.start+z.end)/2);
+}
+function nearestZodiacByAngle(angle){
+  let best=null, bestd=999;
+  for(const z of zodiacs){
+    const c=zodiacCenterAngle(z);
+    const d=Math.abs(angleDiff(angle,c));
+    if(d<bestd){bestd=d;best=z}
+  }
+  return best.name;
+}
+
+const dayEl=document.getElementById("day");
+const timeEl=document.getElementById("time");
+const space=document.getElementById("spaceCanvas");
+const sky=document.getElementById("skyCanvas");
+const sctx=space.getContext("2d"), kctx=sky.getContext("2d");
+
+function fitCanvas(canvas,ctx){
+  const r=canvas.getBoundingClientRect(), dpr=window.devicePixelRatio||1;
+  const w=Math.max(10,Math.round(r.width*dpr)), h=Math.max(10,Math.round(r.height*dpr));
+  if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h}
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  return {w:r.width,h:r.height};
+}
+function radialStarfield(ctx,w,h,n=170){
+  ctx.fillStyle="#020711";ctx.fillRect(0,0,w,h);
+  for(let i=0;i<n;i++){
+    const x=(Math.sin(i*12.9898)*43758.5453)%1;
+    const y=(Math.sin(i*78.233)*24634.6345)%1;
+    const xx=Math.abs(x)*w, yy=Math.abs(y)*h;
+    const rr=(i%11===0)?1.6:(i%4===0?1.1:.7);
+    ctx.globalAlpha=.35+((i*37)%50)/100;
+    ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(xx,yy,rr,0,Math.PI*2);ctx.fill();
+  }
+  ctx.globalAlpha=1;
+}
+function drawArrow(ctx,x1,y1,x2,y2,color,width=2){
+  ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=width;
+  ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+  const a=Math.atan2(y2-y1,x2-x1), L=10;
+  ctx.beginPath();ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-L*Math.cos(a-.45),y2-L*Math.sin(a-.45));
+  ctx.lineTo(x2-L*Math.cos(a+.45),y2-L*Math.sin(a+.45));
+  ctx.closePath();ctx.fill();
+}
+function drawRotatedText(ctx, text, x, y, angle, color, font="12px system-ui"){
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.rotate(angle);
+  ctx.fillStyle=color;
+  ctx.font=font;
+  ctx.textAlign="center";
+  ctx.textBaseline="middle";
+  ctx.fillText(text,0,0);
+  ctx.restore();
+}
+
+function drawSpace(){
+  const {w,h}=fitCanvas(space,sctx);
+  radialStarfield(sctx,w,h,220);
+
+  const cx=w/2, cy=h/2;
+  const orbitR=Math.min(w,h)*.28;
+  const ringR=Math.min(w,h)*.45;
+  const day=+dayEl.value, t=+timeEl.value;
+  const sl=sunLongitude(day), el=earthLongitude(day);
+  const sunR=Math.min(w,h)*.055, earthR=Math.min(w,h)*.033;
+
+  // Screen-space directions for the selected date/time.
+  // Earth lies at angle ea from the Sun. The direction from Earth toward the Sun
+  // is therefore ea + 180 degrees. The observer's outward/zenith direction then
+  // rotates with local solar time.
+  const ea = -el*Math.PI/180 - Math.PI/2;
+  const sunDirectionAngle = ea + Math.PI;
+  const hourAngle=(t-12)*15*Math.PI/180;
+  const obsSkyCenterAngle = sunDirectionAngle - hourAngle;
+
+  // Zodiac ring, north-side perspective: increasing longitude counterclockwise.
+  sctx.strokeStyle="#33506e";sctx.lineWidth=2;
+  sctx.beginPath();sctx.arc(cx,cy,ringR,0,Math.PI*2);sctx.stroke();
+
+  // Highlight the 180-degree portion of the zodiac that is above the observer's
+  // local horizon. Because the zodiac ring represents directions to stars that
+  // are effectively at infinity, this is an angular overlay centered on the
+  // observer's outward (zenith) direction.
+  const overlayOuter=ringR+18;
+  const overlayInner=ringR-24;
+  const overlayStart=obsSkyCenterAngle-Math.PI/2;
+  const overlayEnd=obsSkyCenterAngle+Math.PI/2;
+
+  sctx.save();
+  sctx.beginPath();
+  sctx.arc(cx,cy,overlayOuter,overlayStart,overlayEnd,false);
+  sctx.arc(cx,cy,overlayInner,overlayEnd,overlayStart,true);
+  sctx.closePath();
+  sctx.fillStyle="rgba(142,227,176,.14)";
+  sctx.fill();
+
+  sctx.strokeStyle="rgba(142,227,176,.82)";
+  sctx.lineWidth=4;
+  sctx.beginPath();
+  sctx.arc(cx,cy,ringR,overlayStart,overlayEnd,false);
+  sctx.stroke();
+
+  // Small endpoint marks indicate the two horizon directions without drawing
+  // misleading radial lines across the finite-scale diagram.
+  for(const a of [overlayStart, overlayEnd]){
+    const x1=cx+Math.cos(a)*(ringR-12), y1=cy+Math.sin(a)*(ringR-12);
+    const x2=cx+Math.cos(a)*(ringR+12), y2=cy+Math.sin(a)*(ringR+12);
+    sctx.strokeStyle="rgba(142,227,176,.75)";
+    sctx.lineWidth=2;
+    sctx.beginPath();sctx.moveTo(x1,y1);sctx.lineTo(x2,y2);sctx.stroke();
+  }
+  sctx.restore();
+
+  for(const z of zodiacs){
+    const a = -zodiacCenterAngle(z)*Math.PI/180 - Math.PI/2;
+    const tx=cx+Math.cos(a)*ringR, ty=cy+Math.sin(a)*ringR;
+    sctx.fillStyle=(z.name===constellationForDay(day))?"#ffd166":"#a9bed8";
+    sctx.font=`${Math.max(10,Math.min(13,w/55))}px system-ui`;
+    sctx.textAlign="center";sctx.textBaseline="middle";
+    sctx.fillText(z.name,tx,ty);
+  }
+
+  // Orbit
+  sctx.strokeStyle="#284a6b";sctx.lineWidth=2;
+  sctx.beginPath();sctx.arc(cx,cy,orbitR,0,Math.PI*2);sctx.stroke();
+
+  // Counterclockwise orbital motion arrow (north-pole view).
+  const motionBase = -el*Math.PI/180 - Math.PI/2;
+  const ma1 = motionBase - .34, ma2 = motionBase - .56;
+  drawArrow(
+    sctx,
+    cx+Math.cos(ma1)*orbitR, cy+Math.sin(ma1)*orbitR,
+    cx+Math.cos(ma2)*orbitR, cy+Math.sin(ma2)*orbitR,
+    "#63b8ff",2
+  );
+  sctx.fillStyle="#89ccff";sctx.font="bold 11px system-ui";sctx.textAlign="center";
+  const labA=motionBase-.9;
+  sctx.fillText("Earth revolves CCW",cx+Math.cos(labA)*(orbitR+23),cy+Math.sin(labA)*(orbitR+23));
+
+  // Sun
+  const grad=sctx.createRadialGradient(cx,cy,0,cx,cy,sunR*2.2);
+  grad.addColorStop(0,"#fff5bd");grad.addColorStop(.35,"#ffd166");grad.addColorStop(1,"rgba(255,209,102,0)");
+  sctx.fillStyle=grad;sctx.beginPath();sctx.arc(cx,cy,sunR*2.2,0,Math.PI*2);sctx.fill();
+  sctx.fillStyle="#ffd166";sctx.beginPath();sctx.arc(cx,cy,sunR,0,Math.PI*2);sctx.fill();
+  sctx.fillStyle="#203";sctx.font="bold 12px system-ui";sctx.textAlign="center";sctx.fillText("SUN",cx,cy+4);
+
+  // Earth position, with same north-side convention.
+  const ex=cx+Math.cos(ea)*orbitR, ey=cy+Math.sin(ea)*orbitR;
+
+  // Unit vector Earth -> Sun
+  const vx=cx-ex, vy=cy-ey, vm=Math.hypot(vx,vy), sx=vx/vm, sy=vy/vm;
+
+  // Apparent Sun direction through Earth toward background constellation.
+  const far=ringR+orbitR*.48;
+  sctx.setLineDash([7,6]);sctx.strokeStyle="rgba(255,209,102,.7)";sctx.lineWidth=2;
+  sctx.beginPath();sctx.moveTo(ex,ey);sctx.lineTo(ex+sx*far,ey+sy*far);sctx.stroke();
+  sctx.setLineDash([]);
+
+  // Draw Earth disk and day/night shading.
+  sctx.save();
+  sctx.beginPath();sctx.arc(ex,ey,earthR,0,Math.PI*2);sctx.clip();
+  sctx.fillStyle="#63b8ff";sctx.fillRect(ex-earthR,ey-earthR,2*earthR,2*earthR);
+
+  // Shade night hemisphere: side away from Sun.
+  const sunAngle=Math.atan2(sy,sx);
+  sctx.translate(ex,ey);sctx.rotate(sunAngle);
+  sctx.fillStyle="rgba(3,8,18,.84)";
+  sctx.fillRect(-earthR,-earthR,earthR,2*earthR);
+  sctx.restore();
+
+  sctx.strokeStyle="#d7ecff";sctx.lineWidth=1.5;
+  sctx.beginPath();sctx.arc(ex,ey,earthR,0,Math.PI*2);sctx.stroke();
+
+  // Observer location:
+  // local solar time 12h => subsolar side, 18h => evening terminator,
+  // 24h => anti-solar side, 30h=>morning terminator.
+  // rotate clockwise with increasing local solar time as viewed from north
+  const obsAngle = sunAngle - hourAngle;
+  const ox=ex+Math.cos(obsAngle)*(earthR+4);
+  const oy=ey+Math.sin(obsAngle)*(earthR+4);
+
+  // Local outward vertical from Earth's center to observer.
+  const nx=Math.cos(obsAngle), ny=Math.sin(obsAngle);
+
+  // Tangent horizon direction.
+  const hx=-ny, hy=nx;
+  const horizonLen=Math.min(w,h)*.085;
+
+  // Horizon dashed line.
+  sctx.save();
+  sctx.setLineDash([6,5]);
+  sctx.strokeStyle="#8ee3b0";sctx.lineWidth=2;
+  sctx.beginPath();
+  sctx.moveTo(ox-hx*horizonLen,oy-hy*horizonLen);
+  sctx.lineTo(ox+hx*horizonLen,oy+hy*horizonLen);
+  sctx.stroke();
+  sctx.restore();
+
+  // Visible-sky indicator.
+  // The local horizon divides viewing directions into a 180-degree visible half-sky
+  // and a 180-degree below-horizon half. Draw only a local arc so the schematic
+  // zodiac ring is not mistaken for a nearby wall intersected by the horizon.
+  const skyArcR=Math.min(w,h)*.105;
+  const outwardAngle=Math.atan2(ny,nx);
+
+  sctx.save();
+  sctx.strokeStyle="rgba(142,227,176,.72)";
+  sctx.lineWidth=2;
+  sctx.setLineDash([3,4]);
+  sctx.beginPath();
+  sctx.arc(ox,oy,skyArcR,outwardAngle-Math.PI/2,outwardAngle+Math.PI/2);
+  sctx.stroke();
+  sctx.restore();
+
+  // Short outward arrow shows which side of the horizon is the visible sky.
+  drawArrow(sctx,ox,oy,ox+nx*34,oy+ny*34,"#8ee3b0",2);
+
+  // Observer marker.
+  sctx.fillStyle="#fff";sctx.beginPath();sctx.arc(ox,oy,4,0,Math.PI*2);sctx.fill();
+  sctx.strokeStyle="#07111f";sctx.lineWidth=1.5;sctx.stroke();
+
+  // Small person/body tick.
+  sctx.strokeStyle="#fff";sctx.lineWidth=2;
+  sctx.beginPath();sctx.moveTo(ox-nx*2,oy-ny*2);sctx.lineTo(ox-nx*11,oy-ny*11);sctx.stroke();
+
+  // Labels.
+  sctx.fillStyle="#d9ebff";sctx.font="bold 12px system-ui";sctx.textAlign="left";
+  sctx.fillText("Earth",ex+earthR+6,ey-earthR-3);
+
+  sctx.fillStyle="#8ee3b0";sctx.font="11px system-ui";
+  const hlx=ox+hx*horizonLen*.67, hly=oy+hy*horizonLen*.67;
+  sctx.fillText("local horizon",hlx+5,hly-4);
+
+  sctx.fillStyle="#8ee3b0";
+  sctx.fillText("visible half-sky",ox+nx*42+5,oy+ny*42);
+
+  // Reminder near the outer zodiac ring: angular directions, not actual distances.
+  sctx.fillStyle="#8fa9c2";sctx.font="10px system-ui";sctx.textAlign="center";
+  sctx.fillText("schematic zodiac background — stars effectively at infinity",cx,cy-ringR+18);
+
+  const overlayLabelR=ringR-38;
+  const olx=cx+Math.cos(obsSkyCenterAngle)*overlayLabelR;
+  const oly=cy+Math.sin(obsSkyCenterAngle)*overlayLabelR;
+  sctx.fillStyle="rgba(174,245,197,.95)";
+  sctx.font="bold 10px system-ui";
+  sctx.fillText("180° above horizon",olx,oly);
+
+  sctx.fillStyle="#fff";sctx.font="11px system-ui";
+  sctx.fillText(`observer: ${timeText(t)}`,ox+7,oy-10);
+}
+
+function drawSky(){
+  const {w,h}=fitCanvas(sky,kctx);
+  radialStarfield(kctx,w,h,150);
+  const day=+dayEl.value, t=+timeEl.value;
+  const sl=sunLongitude(day);
+  const center=wrap360(sl + 15*(t-12));
+  const sunDelta=angleDiff(sl,center);
+
+  const left=38,right=w-38,top=28,bottom=h-48;
+  const grd=kctx.createLinearGradient(0,top,0,bottom);
+  grd.addColorStop(0,"rgba(4,13,30,.1)");grd.addColorStop(1,"rgba(27,53,82,.65)");
+  kctx.fillStyle=grd;kctx.fillRect(left,top,right-left,bottom-top);
+
+  kctx.fillStyle="#0a141d";kctx.fillRect(0,bottom,w,h-bottom);
+  kctx.strokeStyle="#58708c";kctx.lineWidth=1.5;
+  kctx.beginPath();kctx.moveTo(left,bottom);kctx.lineTo(right,bottom);kctx.stroke();
+
+  const bandY=top+(bottom-top)*.43;
+  kctx.strokeStyle="rgba(121,197,255,.42)";kctx.setLineDash([6,5]);
+  kctx.beginPath();kctx.moveTo(left,bandY);kctx.lineTo(right,bandY);kctx.stroke();kctx.setLineDash([]);
+
+  for(const z of zodiacs){
+    let c=zodiacCenterAngle(z);
+    let d=angleDiff(c,center);
+    if(Math.abs(d)<=95){
+      const x=left+(90-d)/180*(right-left);
+      const altitude=Math.max(0, Math.cos(d*Math.PI/180));
+      const y=bottom-altitude*(bottom-top)*.68;
+      kctx.fillStyle="rgba(255,255,255,.9)";
+      const seed=z.name.length*17;
+      for(let j=0;j<5;j++){
+        const dx=((j*23+seed)%31)-15, dy=((j*17+seed)%25)-12;
+        kctx.beginPath();kctx.arc(x+dx,y+dy, j===0?2:1.2,0,Math.PI*2);kctx.fill();
+      }
+      kctx.strokeStyle="rgba(220,235,255,.28)";kctx.lineWidth=1;
+      kctx.beginPath();kctx.moveTo(x-12,y+4);kctx.lineTo(x,y-8);kctx.lineTo(x+11,y+7);kctx.stroke();
+      if(document.getElementById("labels").checked){
+        kctx.fillStyle=(z.name===constellationForDay(day))?"#ffd166":"#e7f2ff";
+        kctx.font="bold 12px system-ui";kctx.textAlign="center";
+        kctx.fillText(z.name,x,y+28);
+      }
+    }
+  }
+
+  if(document.getElementById("midnightMarker").checked){
+    kctx.strokeStyle="rgba(142,227,176,.75)";kctx.setLineDash([4,5]);
+    kctx.beginPath();kctx.moveTo(w/2,top);kctx.lineTo(w/2,bottom);kctx.stroke();kctx.setLineDash([]);
+    kctx.fillStyle="#8ee3b0";kctx.font="12px system-ui";kctx.textAlign="center";
+    kctx.fillText("local meridian",w/2,top+12);
+  }
+
+  if(document.getElementById("sunDir").checked){
+    if(Math.abs(sunDelta)<=90){
+      const x=left+(90-sunDelta)/180*(right-left);
+      const y=bottom-Math.max(0,Math.cos(sunDelta*Math.PI/180))*(bottom-top)*.68;
+      kctx.fillStyle="#ffd166";kctx.beginPath();kctx.arc(x,y,10,0,Math.PI*2);kctx.fill();
+      kctx.fillStyle="#ffd166";kctx.font="bold 12px system-ui";kctx.fillText("Sun",x,y-16);
+    }else{
+      kctx.fillStyle="#ffd166";kctx.font="bold 12px system-ui";kctx.textAlign="center";
+      kctx.fillText("Sun is below the horizon",w/2,bottom+28);
+    }
+  }
+
+  kctx.fillStyle="#a9bed8";kctx.font="12px system-ui";
+  kctx.textAlign="left";kctx.fillText("EAST horizon",left,bottom+18);
+  kctx.textAlign="right";kctx.fillText("WEST horizon",right,bottom+18);
+}
+
+function updateText(){
+  const day=+dayEl.value, t=+timeEl.value, sunC=constellationForDay(day);
+  const sl=sunLongitude(day), opposite=wrap360(sl+180), oppC=nearestZodiacByAngle(opposite);
+  const center=wrap360(sl+15*(t-12)), centerC=nearestZodiacByAngle(center);
+
+  document.getElementById("dateLabel").textContent=dateFromDay(day);
+  document.getElementById("timeLabel").textContent=timeText(t);
+  document.getElementById("sunConst").textContent=sunC;
+  document.getElementById("oppConst").textContent=oppC;
+  document.getElementById("seasonLabel").textContent=seasonName(day);
+
+  document.getElementById("explanation").innerHTML =
+    `On <b>${dateFromDay(day)}</b>, the Sun appears against <b>${sunC}</b>. ` +
+    `That constellation is difficult or impossible to see because it lies in the same direction as the bright Sun. ` +
+    `Roughly opposite the Sun is <b>${oppC}</b>, so it is especially well placed for viewing near midnight. ` +
+    `At <b>${timeText(t)}</b>, the observer marker on Earth shows the location whose local horizon is drawn in green. ` +
+    `The small green arc represents the observer's 180-degree visible half-sky, while the translucent green arc on the outer zodiac ring highlights the corresponding 180 degrees of zodiac directions that are above the horizon. The outer zodiac ring is schematic: the stars are so distant that the ring should be read as directions, not as a nearby wall intersected by the horizon line. ` +
+    `The center of the simplified sky view is near <b>${centerC}</b>.`;
+
+  document.getElementById("questionText").innerHTML =
+    `Without pressing Reveal: on <b>${dateFromDay(day)}</b>, which constellation should be especially well placed near midnight, and which one is hidden in the Sun's direction?`;
+  document.getElementById("answerBox").innerHTML =
+    `<b>Best placed near midnight:</b> ${oppC}<br><b>Near the Sun / lost in daylight:</b> ${sunC}`;
+}
+
+function render(){
+  updateText();
+  drawSpace();
+  drawSky();
+}
+
+dayEl.addEventListener("input",()=>{document.getElementById("answerBox").classList.remove("show");render();});
+timeEl.addEventListener("input",render);
+["labels","sunDir","midnightMarker"].forEach(id=>document.getElementById(id).addEventListener("change",render));
+document.querySelectorAll("button[data-day]").forEach(b=>b.addEventListener("click",()=>{
+  dayEl.value=b.dataset.day;document.getElementById("answerBox").classList.remove("show");render();
+}));
+document.getElementById("reveal").addEventListener("click",()=>{
+  document.getElementById("answerBox").classList.toggle("show");
+});
+window.addEventListener("resize",render);
+render();
+</script>
+
+</body>
+</html>

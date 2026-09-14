@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Moonrise: Why About 50 Minutes Later? — Version 6</title>
+<style>
+:root{
+  --panel:#0d1d31; --line:#29465f; --ink:#eef6ff; --muted:#a9bfd8;
+  --blue:#76c6ff; --moon:#f3f0d7; --gold:#ffd166; --green:#8ee3b0; --violet:#c3a6ff;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--ink);
+  background:radial-gradient(circle at top,#102b4a 0,#071423 42%,#030912 100%)
+}
+.wrap{max-width:1450px;margin:auto;padding:20px}
+header{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;margin-bottom:15px}
+h1{margin:0 0 5px;font-size:clamp(1.8rem,3vw,3rem)}
+.subtitle{color:var(--muted);line-height:1.45;max-width:980px}
+.badge{padding:8px 12px;border-radius:999px;border:1px solid #35648e;background:#173a5d;color:#dff1ff;font-size:.9rem}
+.controls,.panel,.card{background:rgba(13,29,49,.95);border:1px solid var(--line);border-radius:17px;box-shadow:0 10px 28px rgba(0,0,0,.22)}
+.controls{padding:15px;margin-bottom:15px}
+.controlgrid{display:grid;grid-template-columns:minmax(320px,1.25fr) minmax(300px,1fr) auto;gap:18px;align-items:center}
+@media(max-width:960px){.controlgrid{grid-template-columns:1fr}}
+label{font-weight:750}.small{color:var(--muted);font-size:.88rem;line-height:1.35}.value{color:var(--gold);font-weight:850;font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--blue)}
+.buttons{display:flex;gap:8px;flex-wrap:wrap}
+button{color:var(--ink);background:#173a5d;border:1px solid #3e6385;border-radius:10px;padding:9px 12px;font-weight:750;cursor:pointer}
+button:hover{background:#224d75} button.primary{background:#225c8f;border-color:#5694c3}
+.callout{margin:0 0 14px;padding:10px 13px;background:#102944;border:1px solid #2b5071;border-radius:11px;color:#dcecff;line-height:1.4}
+.main{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:15px}
+@media(max-width:1050px){.main{grid-template-columns:1fr}}
+.panel{overflow:hidden}.panel h2{font-size:1.12rem;margin:0;padding:13px 15px;border-bottom:1px solid var(--line)}
+.canvaswrap{aspect-ratio:1.15/1;background:#020711}.skywrap{padding:11px}
+canvas{display:block;width:100%;height:100%} #horizonCanvas{aspect-ratio:1.45/1;border:1px solid #26445f;border-radius:13px;background:#020711}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;padding:11px 13px;background:#091726;border-top:1px solid var(--line)}
+.stat{background:#102944;border-radius:10px;padding:8px}.stat b{display:block;color:var(--muted);font-size:.78rem;margin-bottom:2px}.stat span{font-weight:850}
+.legend{padding:10px 13px;border-top:1px solid var(--line);color:var(--muted);display:flex;gap:15px;flex-wrap:wrap;font-size:.86rem}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px}
+.lower{display:grid;grid-template-columns:1.15fr .85fr;gap:15px;margin-top:15px}
+@media(max-width:900px){.lower{grid-template-columns:1fr}}
+.card{padding:15px}.card h3{margin:0 0 8px}.card p{line-height:1.45;margin:.45em 0;color:#dce9f7}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:12px}
+@media(max-width:700px){.steps{grid-template-columns:1fr}}
+.step{background:#10253c;padding:11px;border-radius:11px;border:1px solid #203d59}.step strong{display:block;color:var(--gold);margin-bottom:4px}
+.challenge{border-left:4px solid var(--gold)}.answer{display:none;background:#10253c;border-radius:10px;padding:10px;margin-top:10px}.answer.show{display:block}
+.note{margin-top:15px;background:rgba(6,16,28,.8);border:1px solid #1b344e;border-radius:12px;padding:11px;color:var(--muted);font-size:.84rem;line-height:1.42}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <h1>Moonrise: Why About 50 Minutes Later?</h1>
+    <div class="subtitle">
+      Northern Hemisphere geometry viewed from above Earth's North Pole. Earth rotates beneath nearly parallel sunlight while the Moon moves eastward a little more than 13° per day.
+    </div>
+  </div>
+  <div class="badge">Astronomy • Moon motion concept model • Version 6</div>
+</header>
+
+<div class="callout">
+  <b>Reference cycle:</b> the model begins on <b>September 11, 2026, near New Moon</b>. Parallel yellow rays show sunlight traveling toward Earth; the translucent cone on Earth's night side shows the <b>direction of Earth's shadow</b>, not an eclipse prediction.
+</div>
+
+<section class="controls">
+  <div class="controlgrid">
+    <div>
+      <label for="timeline">Continuous date/time: <span id="timelineLabel" class="value"></span></label>
+      <input id="timeline" type="range" min="0" max="14.999" value="0.291667" step="0.005">
+      <div class="small">Drag slowly. A change of 1.0 = 24 hours: Earth turns once relative to the Sun while the Moon advances about 13° eastward.</div>
+    </div>
+    <div>
+      <label for="clock">Local clock time on selected date: <span id="clockLabel" class="value"></span></label>
+      <input id="clock" type="range" min="300" max="1260" value="420" step="5">
+      <div class="small">Both sliders control the same instant. When today's Moon is in the Observer View window, its position 24 hours earlier is shown in purple.</div>
+    </div>
+    <div class="buttons">
+      <button id="prev">◀ Previous day</button>
+      <button id="next" class="primary">Next day ▶</button>
+      <button id="jumpRise">Jump to Moonrise</button>
+      <button id="reset">Reset</button>
+    </div>
+  </div>
+</section>
+
+<div class="main">
+<section class="panel">
+  <h2>1. Space view — above Earth's North Pole</h2>
+  <div class="canvaswrap"><canvas id="spaceCanvas"></canvas></div>
+  <div class="stats">
+    <div class="stat"><b>Solar-day rotation</b><span>360° per 24 h</span></div>
+    <div class="stat"><b>Moon eastward motion</b><span>≈ 13.2° per day</span></div>
+    <div class="stat"><b>Modeled Moonrise</b><span id="riseStat"></span></div>
+  </div>
+  <div class="legend">
+    <span><span class="dot" style="background:#76c6ff"></span>Earth / observer</span>
+    <span><span class="dot" style="background:#f3f0d7"></span>Moon now</span>
+    <span><span class="dot" style="background:#c3a6ff"></span>Moon 24 h earlier when comparison is useful</span>
+    <span><span class="dot" style="background:#ffd166"></span>parallel sunlight / daylight side</span>
+    <span><span class="dot" style="background:#8ee3b0"></span>local horizon</span>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>2. Observer view — eastern horizon</h2>
+  <div style="padding:9px 15px 0;color:#a9bfd8;font-size:.86rem;line-height:1.35;">
+    <b>Note:</b> The Moon's position is modeled here, but its changing phase (appearance as seen from Earth) is not shown.
+  </div>
+  <div class="skywrap"><canvas id="horizonCanvas"></canvas></div>
+  <div class="legend">
+    The Sun now appears in this eastern-sky window around sunrise. The purple Moon appears automatically whenever today's Moon is in the window and a 24-hour-earlier comparison is available.
+  </div>
+</section>
+</div>
+
+<div class="lower">
+<section class="card">
+  <h3>What to watch</h3>
+  <p id="explain"></p>
+  <div class="steps">
+    <div class="step"><strong>1. Follow sunrise</strong>The observer rotates into the illuminated half of Earth as the Sun crosses the eastern horizon.</div>
+    <div class="step"><strong>2. Compare the Moon</strong>At the same clock time one day later, the Moon has moved east relative to the Sun and stars.</div>
+    <div class="step"><strong>3. Earth catches up</strong>The observer must rotate a little farther before the Moon reaches the eastern horizon again—about 50 minutes later.</div>
+  </div>
+</section>
+<section class="card challenge">
+  <h3>Quick challenge</h3>
+  <p id="question"></p>
+  <button id="reveal">Reveal answer</button>
+  <div id="answer" class="answer"></div>
+</section>
+</div>
+
+<div class="note">
+  <b>Model limits:</b> Sizes and distances are greatly exaggerated. The lunar orbit is drawn in the same plane as the diagram so rise-time geometry is easy to see. In reality the Moon's orbit is tilted by about 5° to the ecliptic, so the Moon usually passes above or below Earth's shadow; a visual crossing of the flattened shadow cone in Pane 1 should <b>not</b> be interpreted as predicting an eclipse. The “about 50 minutes later” rule is an average.
+</div>
+</div>
+
+<script>
+const D2R=Math.PI/180;
+const MOON_RATE=13.2;          // deg/day against stars
+const SUN_RATE=0.986;          // deg/day apparent Sun motion
+const EARTH_RATE=360+SUN_RATE; // inertial spin so solar day remains 24 h
+const BASE_RISE=430;           // 7:10 AM, day 0
+const BASE_SUNRISE=405;        // 6:45 AM teaching reference
+const BASE_DATE=new Date(2026,8,11);
+const START_CLOCK=420;
+const START_T=START_CLOCK/1440;
+const SUN_BASE=28*D2R;
+
+// Choose observer phase so Sun is exactly on eastern horizon at BASE_SUNRISE.
+const TSUN=BASE_SUNRISE/1440;
+const OBS_PHASE=SUN_BASE + TSUN*SUN_RATE*D2R - Math.PI/2 - TSUN*EARTH_RATE*D2R;
+
+// Choose Moon phase so Moon is exactly on eastern horizon at BASE_RISE.
+const TMOON=BASE_RISE/1440;
+const BASE_MOON = OBS_PHASE + TMOON*EARTH_RATE*D2R + Math.PI/2 - TMOON*MOON_RATE*D2R;
+
+// The geometry itself gives ~50.6 minutes later each day.
+const RISE_DELAY=(360/(EARTH_RATE-MOON_RATE)-1)*1440;
+
+const timeline=document.getElementById("timeline");
+const clock=document.getElementById("clock");
+const space=document.getElementById("spaceCanvas"),horizon=document.getElementById("horizonCanvas");
+const sctx=space.getContext("2d"),hctx=horizon.getContext("2d");
+
+function fit(canvas,ctx){
+  const r=canvas.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
+  canvas.width=Math.max(10,Math.round(r.width*dpr));canvas.height=Math.max(10,Math.round(r.height*dpr));
+  ctx.setTransform(dpr,0,0,dpr,0,0);return{w:r.width,h:r.height};
+}
+function stars(ctx,w,h,n=180){
+  ctx.fillStyle="#020711";ctx.fillRect(0,0,w,h);
+  for(let i=0;i<n;i++){
+    const x=Math.abs((Math.sin(i*17.13)*9317.7)%1)*w,y=Math.abs((Math.sin(i*41.71)*7132.3)%1)*h;
+    ctx.globalAlpha=.35+((i*31)%55)/100;ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(x,y,i%13===0?1.6:.8,0,Math.PI*2);ctx.fill();
+  }ctx.globalAlpha=1;
+}
+function arrow(ctx,x1,y1,x2,y2,color,width=2,head=9){
+  const a=Math.atan2(y2-y1,x2-x1);ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=width;
+  ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(x2,y2);ctx.lineTo(x2-head*Math.cos(a-.45),y2-head*Math.sin(a-.45));ctx.lineTo(x2-head*Math.cos(a+.45),y2-head*Math.sin(a+.45));ctx.closePath();ctx.fill();
+}
+function ppoint(cx,cy,r,a){return{x:cx+Math.cos(a)*r,y:cy-Math.sin(a)*r}}
+function pvec(a){return{x:Math.cos(a),y:-Math.sin(a)}}
+function wrapPi(a){while(a>Math.PI)a-=2*Math.PI;while(a<-Math.PI)a+=2*Math.PI;return a}
+function clockText(min){
+  min=((Math.round(min)%1440)+1440)%1440;let h=Math.floor(min/60),m=min%60,ap=h>=12?"PM":"AM",hh=h%12;if(hh===0)hh=12;
+  return`${hh}:${String(m).padStart(2,"0")} ${ap}`;
+}
+function durationText(min){
+  min=Math.max(0,Math.round(Math.abs(min)));const h=Math.floor(min/60),m=min%60;
+  if(h===0)return`${m} min`;if(m===0)return`${h} h`;return`${h} h ${m} min`;
+}
+function dateFor(dayIndex){
+  const d=new Date(BASE_DATE);d.setDate(d.getDate()+dayIndex);
+  return d.toLocaleDateString("en-US",{month:"short",day:"numeric"});
+}
+function phaseName(day){if(day<2)return"New Moon";if(day<6)return"Waxing Crescent";if(day<9)return"First Quarter";if(day<13)return"Waxing Gibbous";return"near Full Moon"}
+function riseTime(day){return BASE_RISE+day*RISE_DELAY}
+function moonTheta(t){return BASE_MOON+t*MOON_RATE*D2R}
+function sunTheta(t){return SUN_BASE+t*SUN_RATE*D2R}
+function observerTheta(t){return OBS_PHASE+t*EARTH_RATE*D2R}
+
+function currentState(){
+  const t=+timeline.value,dayIndex=Math.floor(t+1e-9),minutes=(t-dayIndex)*1440;
+  return{t,dayIndex,minutes};
+}
+function syncClockFromTimeline(){
+  const st=currentState();clock.value=Math.max(+clock.min,Math.min(+clock.max,Math.round(st.minutes/5)*5));
+}
+function syncTimelineFromClock(){
+  const d=Math.floor(+timeline.value+1e-9);
+  timeline.value=Math.max(+timeline.min,Math.min(+timeline.max,d+(+clock.value)/1440));
+}
+function skyState(objectAngle,t){
+  const phi=observerTheta(t);
+  const delta=wrapPi(objectAngle-phi);
+  // altitude in this simplified equatorial cross-section
+  const alt=Math.asin(Math.cos(delta))/D2R;
+  const eastComponent=Math.cos(objectAngle-(phi+Math.PI/2));
+  return{alt,eastComponent};
+}
+function currentMoonInObserverWindow(t){
+  const s=skyState(moonTheta(t),t);
+  return s.eastComponent>0 && s.alt>-12 && s.alt<31;
+}
+function shadeNightHalf(ctx,cx,cy,r,sunAng){
+  const s=pvec(sunAng),n={x:-s.x,y:-s.y},tan={x:-s.y,y:s.x};
+  ctx.save();ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.clip();
+  ctx.fillStyle="rgba(0,0,18,.62)";
+  ctx.beginPath();
+  ctx.moveTo(cx+tan.x*r*2,cy+tan.y*r*2);ctx.lineTo(cx-tan.x*r*2,cy-tan.y*r*2);
+  ctx.lineTo(cx-tan.x*r*2+n.x*r*4,cy-tan.y*r*2+n.y*r*4);
+  ctx.lineTo(cx+tan.x*r*2+n.x*r*4,cy+tan.y*r*2+n.y*r*4);ctx.closePath();ctx.fill();ctx.restore();
+  ctx.strokeStyle="rgba(255,209,102,.55)";ctx.lineWidth=1.4;ctx.beginPath();
+  ctx.moveTo(cx+tan.x*r,cy+tan.y*r);ctx.lineTo(cx-tan.x*r,cy-tan.y*r);ctx.stroke();
+}
+function drawSunlight(ctx,cx,cy,earthR,orbitR,sunAng){
+  const s=pvec(sunAng),travel={x:-s.x,y:-s.y},perp={x:-s.y,y:s.x};
+
+  // Soft broad illumination corridor.
+  ctx.save();
+  ctx.fillStyle="rgba(255,209,102,.035)";
+  ctx.beginPath();
+  ctx.moveTo(cx+s.x*orbitR*1.35+perp.x*earthR*2.4,cy+s.y*orbitR*1.35+perp.y*earthR*2.4);
+  ctx.lineTo(cx+s.x*orbitR*1.35-perp.x*earthR*2.4,cy+s.y*orbitR*1.35-perp.y*earthR*2.4);
+  ctx.lineTo(cx-s.x*orbitR*.22-perp.x*earthR*2.4,cy-s.y*orbitR*.22-perp.y*earthR*2.4);
+  ctx.lineTo(cx-s.x*orbitR*.22+perp.x*earthR*2.4,cy-s.y*orbitR*.22+perp.y*earthR*2.4);
+  ctx.closePath();ctx.fill();
+
+  // Parallel light rays.
+  const offsets=[-1.6,-.8,0,.8,1.6];
+  for(const k of offsets){
+    const sx=cx+s.x*orbitR*1.28+perp.x*earthR*k;
+    const sy=cy+s.y*orbitR*1.28+perp.y*earthR*k;
+    const ex=cx+s.x*earthR*1.15+perp.x*earthR*k;
+    const ey=cy+s.y*earthR*1.15+perp.y*earthR*k;
+    ctx.globalAlpha=(k===0?.8:.48);
+    arrow(ctx,sx,sy,ex,ey,"#ffd166",k===0?2:1.2,k===0?8:6);
+  }
+  ctx.globalAlpha=1;
+
+  const labx=cx+s.x*orbitR*1.08+perp.x*earthR*2.05;
+  const laby=cy+s.y*orbitR*1.08+perp.y*earthR*2.05;
+  ctx.fillStyle="rgba(255,224,139,.9)";ctx.font="11px system-ui";ctx.textAlign="center";ctx.fillText("parallel sunlight",labx,laby);
+  ctx.restore();
+}
+function drawEarthShadow(ctx,cx,cy,earthR,orbitR,sunAng){
+  const s=pvec(sunAng),away={x:-s.x,y:-s.y},perp={x:-s.y,y:s.x};
+  const startDist=earthR*.82,endDist=orbitR*.57;
+  const a={x:cx+away.x*startDist+perp.x*earthR*.72,y:cy+away.y*startDist+perp.y*earthR*.72};
+  const b={x:cx+away.x*startDist-perp.x*earthR*.72,y:cy+away.y*startDist-perp.y*earthR*.72};
+  const c={x:cx+away.x*endDist-perp.x*earthR*.23,y:cy+away.y*endDist-perp.y*earthR*.23};
+  const d={x:cx+away.x*endDist+perp.x*earthR*.23,y:cy+away.y*endDist+perp.y*earthR*.23};
+  ctx.save();
+  ctx.fillStyle="rgba(83,103,143,.18)";ctx.strokeStyle="rgba(116,137,180,.34)";ctx.lineWidth=1.2;
+  ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.lineTo(c.x,c.y);ctx.lineTo(d.x,d.y);ctx.closePath();ctx.fill();ctx.stroke();
+  const lx=cx+away.x*orbitR*.48+perp.x*earthR*.75,ly=cy+away.y*orbitR*.48+perp.y*earthR*.75;
+  ctx.fillStyle="rgba(162,179,211,.75)";ctx.font="10px system-ui";ctx.textAlign="center";ctx.fillText("Earth's shadow direction",lx,ly);
+  ctx.restore();
+}
+function drawEarth(ctx,cx,cy,r,phi,sunAng){
+  const g=ctx.createRadialGradient(cx-r*.35,cy-r*.35,2,cx,cy,r);
+  g.addColorStop(0,"#8dd7ff");g.addColorStop(.6,"#267eb6");g.addColorStop(1,"#0f4269");
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();
+  shadeNightHalf(ctx,cx,cy,r,sunAng);
+  ctx.strokeStyle="#d9f0ff";ctx.lineWidth=1.3;ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke();
+
+  const obs=ppoint(cx,cy,r+4,phi),up=pvec(phi),east=pvec(phi+Math.PI/2),west=pvec(phi-Math.PI/2),L=46;
+  ctx.save();ctx.setLineDash([5,4]);ctx.strokeStyle="#8ee3b0";ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(obs.x+west.x*L,obs.y+west.y*L);ctx.lineTo(obs.x+east.x*L,obs.y+east.y*L);ctx.stroke();ctx.restore();
+
+  ctx.strokeStyle="#8ee3b0";ctx.lineWidth=2;
+  for(const [v,label] of [[east,"E"],[west,"W"]]){
+    const ex=obs.x+v.x*L,ey=obs.y+v.y*L;
+    ctx.beginPath();ctx.moveTo(ex-up.x*5,ey-up.y*5);ctx.lineTo(ex+up.x*5,ey+up.y*5);ctx.stroke();
+    ctx.fillStyle="#8ee3b0";ctx.font="bold 10px system-ui";ctx.textAlign="center";ctx.fillText(label,ex+up.x*11,ey+up.y*11);
+  }
+  arrow(ctx,obs.x,obs.y,obs.x+up.x*31,obs.y+up.y*31,"#8ee3b0",2);
+  ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(obs.x,obs.y,4,0,Math.PI*2);ctx.fill();
+}
+function drawSpace(){
+  const {w,h}=fit(space,sctx);stars(sctx,w,h,210);
+  const st=currentState(),t=st.t,cx=w/2,cy=h/2,earthR=Math.min(w,h)*.09,orbitR=Math.min(w,h)*.31;
+  const sa=sunTheta(t);
+
+  drawSunlight(sctx,cx,cy,earthR,orbitR,sa);
+  drawEarthShadow(sctx,cx,cy,earthR,orbitR,sa);
+
+  sctx.strokeStyle="#35516e";sctx.lineWidth=2;sctx.beginPath();sctx.arc(cx,cy,orbitR,0,Math.PI*2);sctx.stroke();
+
+  // Sun-direction arrow beyond the rays.
+  const sv=pvec(sa);
+  const ss={x:cx+sv.x*orbitR*.84,y:cy+sv.y*orbitR*.84},se={x:cx+sv.x*orbitR*1.13,y:cy+sv.y*orbitR*1.13};
+  arrow(sctx,ss.x,ss.y,se.x,se.y,"#ffd166",3);
+  sctx.fillStyle="#ffd166";sctx.font="bold 12px system-ui";sctx.textAlign="center";
+  sctx.fillText("SUN",cx+sv.x*orbitR*1.22,cy+sv.y*orbitR*1.22);
+
+  // Moon orbital direction.
+  const a1=55*D2R,a2=74*D2R,q1=ppoint(cx,cy,orbitR,a1),q2=ppoint(cx,cy,orbitR,a2);
+  arrow(sctx,q1.x,q1.y,q2.x,q2.y,"#c3a6ff",2);
+  sctx.fillStyle="#c3a6ff";sctx.font="11px system-ui";sctx.fillText("Moon moves EASTWARD / counterclockwise",cx,cy-orbitR-18);
+
+  const mt=moonTheta(t),mp=ppoint(cx,cy,orbitR,mt);
+  const showPrevious=currentMoonInObserverWindow(t) && t>=1;
+  if(showPrevious){
+    const ym=ppoint(cx,cy,orbitR,moonTheta(t-1));
+    sctx.globalAlpha=.38;sctx.fillStyle="#c3a6ff";sctx.beginPath();sctx.arc(ym.x,ym.y,14,0,Math.PI*2);sctx.fill();sctx.globalAlpha=1;
+    sctx.fillStyle="#c3a6ff";sctx.font="11px system-ui";sctx.fillText("24 h earlier",ym.x,ym.y-21);
+  }
+
+  const mg=sctx.createRadialGradient(mp.x-4,mp.y-5,1,mp.x,mp.y,16);
+  mg.addColorStop(0,"#fffef2");mg.addColorStop(.7,"#e7e2c8");mg.addColorStop(1,"#aaa68f");
+  sctx.fillStyle=mg;sctx.beginPath();sctx.arc(mp.x,mp.y,15,0,Math.PI*2);sctx.fill();
+  sctx.fillStyle="#f3f0d7";sctx.font="bold 12px system-ui";sctx.fillText("Moon",mp.x,mp.y-22);
+
+  const phi=observerTheta(t);
+  drawEarth(sctx,cx,cy,earthR,phi,sa);
+
+  // Detached Earth rotation marker.
+  const er1=phi-.85,er2=phi-.5,rrot=earthR*1.65,ep1=ppoint(cx,cy,rrot,er1),ep2=ppoint(cx,cy,rrot,er2);
+  arrow(sctx,ep1.x,ep1.y,ep2.x,ep2.y,"#76c6ff",2);
+  sctx.fillStyle="#76c6ff";sctx.font="bold 10px system-ui";sctx.fillText("Earth rotates CCW",cx,cy+earthR*2.08);
+
+  sctx.fillStyle="#dceeff";sctx.font="bold 12px system-ui";sctx.fillText("Earth",cx,cy+4);
+  sctx.fillStyle="#8faac5";sctx.font="10px system-ui";sctx.fillText("sizes and distances not to scale",cx,h-14);
+}
+function drawDisk(ctx,x,y,r,fill,label,color){
+  const g=ctx.createRadialGradient(x-r*.28,y-r*.32,1,x,y,r);
+  if(fill==="sun"){g.addColorStop(0,"#fff9bd");g.addColorStop(.55,"#ffd65f");g.addColorStop(1,"#f2a51a")}
+  else if(fill==="moon"){g.addColorStop(0,"#fffef4");g.addColorStop(.7,"#ece7cc");g.addColorStop(1,"#aba58b")}
+  else{g.addColorStop(0,"#dacaff");g.addColorStop(1,"#8f78c9")}
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle=color;ctx.font="bold 12px system-ui";ctx.textAlign="center";ctx.fillText(label,x,y-r-8);
+}
+function drawHorizon(){
+  const {w,h}=fit(horizon,hctx);stars(hctx,w,h,150);
+  const st=currentState(),t=st.t,day=st.dayIndex,minutes=st.minutes,rise=riseTime(day),hY=h*.72;
+  const g=hctx.createLinearGradient(0,h*.2,0,hY);g.addColorStop(0,"rgba(8,20,43,.08)");g.addColorStop(.72,"rgba(43,68,104,.24)");g.addColorStop(1,"rgba(119,89,75,.30)");
+  hctx.fillStyle=g;hctx.fillRect(0,0,w,hY);hctx.fillStyle="#08121a";hctx.fillRect(0,hY,w,h-hY);
+  hctx.strokeStyle="#7990a7";hctx.lineWidth=1.4;hctx.beginPath();hctx.moveTo(25,hY);hctx.lineTo(w-25,hY);hctx.stroke();
+  hctx.fillStyle="#a9bfd8";hctx.font="12px system-ui";hctx.textAlign="center";hctx.fillText("EASTERN HORIZON",w/2,hY+23);
+
+  const pxPerDeg=(h*.47)/28;
+
+  // Current Moon from the same geometry as Pane 1.
+  const ms=skyState(moonTheta(t),t);
+  const moonVisible=ms.eastComponent>0 && ms.alt>-12 && ms.alt<31;
+  if(moonVisible){
+    const mx=w*.60,my=hY-ms.alt*pxPerDeg;
+    drawDisk(hctx,mx,my,16,"moon","Moon now","#f3f0d7");
+
+    // Automatically show same-clock-time Moon 24 h earlier.
+    if(t>=1){
+      const ys=skyState(moonTheta(t-1),t-1);
+      const yy=hY-ys.alt*pxPerDeg;
+      if(yy>-18 && yy<h+18){
+        hctx.globalAlpha=.48;drawDisk(hctx,w*.35,yy,13,"ghost","24 h earlier","#c3a6ff");hctx.globalAlpha=1;
+      }
+    }
+  }
+
+  // Sun in eastern sky around sunrise.
+  const ss=skyState(sunTheta(t),t);
+  const sunVisible=ss.eastComponent>0 && ss.alt>-12 && ss.alt<31;
+  if(sunVisible){
+    const sx=w*.78,sy=hY-ss.alt*pxPerDeg;
+    const glow=hctx.createRadialGradient(sx,sy,4,sx,sy,28);
+    glow.addColorStop(0,"rgba(255,225,105,.28)");glow.addColorStop(1,"rgba(255,225,105,0)");
+    hctx.fillStyle=glow;hctx.beginPath();hctx.arc(sx,sy,28,0,Math.PI*2);hctx.fill();
+    drawDisk(hctx,sx,sy,13,"sun","Sun","#ffd166");
+  }
+
+  hctx.fillStyle="#eaf5ff";hctx.font="bold 18px system-ui";hctx.textAlign="left";hctx.fillText(clockText(minutes),22,31);
+  hctx.fillStyle="#a9bfd8";hctx.font="11px system-ui";hctx.fillText(`${dateFor(day)} • ${phaseName(day)}`,22,49);
+
+  const delta=minutes-rise;
+  hctx.textAlign="right";hctx.font="bold 12px system-ui";
+  if(Math.abs(delta)<=3){hctx.fillStyle="#8ee3b0";hctx.fillText("MOONRISE",w-20,31)}
+  else if(delta<0){hctx.fillStyle="#ffce83";hctx.fillText(`${durationText(delta)} before modeled Moonrise`,w-20,31)}
+  else{hctx.fillStyle="#8ee3b0";hctx.fillText(`${durationText(delta)} after modeled Moonrise`,w-20,31)}
+}
+function updateText(){
+  const st=currentState(),day=st.dayIndex,minutes=st.minutes,rise=riseTime(day);
+  document.getElementById("timelineLabel").textContent=`${dateFor(day)}, ${clockText(minutes)} — Day ${st.t.toFixed(2)}`;
+  document.getElementById("clockLabel").textContent=clockText(minutes);
+  document.getElementById("riseStat").textContent=clockText(rise);
+
+  document.getElementById("explain").innerHTML=
+    `At <b>${clockText(minutes)}</b> on <b>${dateFor(day)}</b>, both panes show the same instant. `+
+    `The yellow rays make the sunlight direction explicit, and the observer moves from Earth's night side into daylight at sunrise. `+
+    `Because Earth also advances around the Sun, its inertial rotation is slightly more than 360° per solar day; combining that with the Moon's ≈13.2° eastward motion makes this model's Moonrise delay about <b>${RISE_DELAY.toFixed(1)} minutes per day</b>.`;
+
+  document.getElementById("question").innerHTML=`The modeled Moonrise for ${dateFor(day)} is about <b>${clockText(rise)}</b>. What should you predict for tomorrow?`;
+  document.getElementById("answer").innerHTML=`About <b>${clockText(rise+RISE_DELAY)}</b>, roughly 50 minutes later.`;
+}
+function render(){updateText();drawSpace();drawHorizon()}
+
+timeline.addEventListener("input",()=>{syncClockFromTimeline();document.getElementById("answer").classList.remove("show");render()});
+clock.addEventListener("input",()=>{syncTimelineFromClock();render()});
+document.getElementById("prev").addEventListener("click",()=>{
+  const st=currentState(),target=Math.max(0,st.dayIndex-1);timeline.value=target+START_CLOCK/1440;syncClockFromTimeline();render()
+});
+document.getElementById("next").addEventListener("click",()=>{
+  const st=currentState(),target=Math.min(14,st.dayIndex+1);timeline.value=target+START_CLOCK/1440;syncClockFromTimeline();render()
+});
+document.getElementById("jumpRise").addEventListener("click",()=>{
+  const d=currentState().dayIndex;clock.value=Math.min(+clock.max,Math.round(riseTime(d)/5)*5);syncTimelineFromClock();render()
+});
+document.getElementById("reset").addEventListener("click",()=>{
+  timeline.value=START_T;clock.value=START_CLOCK;document.getElementById("answer").classList.remove("show");render()
+});
+document.getElementById("reveal").addEventListener("click",()=>document.getElementById("answer").classList.toggle("show"));
+window.addEventListener("resize",render);
+render();
+</script>
+</body>
+</html>

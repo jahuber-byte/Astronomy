@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Why We Have Seasons — Version 5</title>
+<style>
+:root{
+  --panel:#0d1d31; --line:#29465f; --ink:#eef6ff; --muted:#a9bfd8;
+  --blue:#76c6ff; --gold:#ffd166; --green:#8ee3b0; --warm:#ffb36b;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--ink);
+  background:radial-gradient(circle at top,#102b4a 0,#071423 42%,#030912 100%)
+}
+.wrap{max-width:1450px;margin:auto;padding:20px}
+header{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;margin-bottom:15px}
+h1{margin:0 0 5px;font-size:clamp(1.8rem,3vw,3rem)}
+.subtitle{color:var(--muted);line-height:1.45;max-width:980px}
+.badge{padding:8px 12px;border-radius:999px;border:1px solid #35648e;background:#173a5d;color:#dff1ff;font-size:.9rem}
+.controls,.panel,.card{background:rgba(13,29,49,.95);border:1px solid var(--line);border-radius:17px;box-shadow:0 10px 28px rgba(0,0,0,.22)}
+.controls{padding:15px;margin-bottom:15px}
+.controlgrid{display:grid;grid-template-columns:minmax(320px,1.25fr) auto;gap:18px;align-items:center}
+@media(max-width:930px){.controlgrid{grid-template-columns:1fr}}
+label{font-weight:750}.small{color:var(--muted);font-size:.88rem;line-height:1.35}.value{color:var(--gold);font-weight:850;font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--blue)}
+.buttons{display:flex;gap:8px;flex-wrap:wrap}
+button{color:var(--ink);background:#173a5d;border:1px solid #3e6385;border-radius:10px;padding:9px 12px;font-weight:750;cursor:pointer}
+button:hover{background:#224d75} button.primary{background:#225c8f;border-color:#5694c3}
+.callout{margin:0 0 14px;padding:10px 13px;background:#102944;border:1px solid #2b5071;border-radius:11px;color:#dcecff;line-height:1.4}
+.main{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:15px}
+@media(max-width:1050px){.main{grid-template-columns:1fr}}
+.panel{overflow:hidden}.panel h2{font-size:1.12rem;margin:0;padding:13px 15px;border-bottom:1px solid var(--line)}
+.panelnote{padding:8px 15px 0;color:var(--muted);font-size:.84rem;line-height:1.35}
+.canvaswrap{aspect-ratio:1.22/1;background:#020711}.earthwrap{padding:11px}
+canvas{display:block;width:100%;height:100%} #earthCanvas{aspect-ratio:1.3/1;border:1px solid #26445f;border-radius:13px;background:#020711}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;padding:11px 13px;background:#091726;border-top:1px solid var(--line)}
+.stat{background:#102944;border-radius:10px;padding:8px}.stat b{display:block;color:var(--muted);font-size:.78rem;margin-bottom:2px}.stat span{font-weight:850}
+.legend{padding:10px 13px;border-top:1px solid var(--line);color:var(--muted);display:flex;gap:15px;flex-wrap:wrap;font-size:.86rem}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px}
+.lower{display:grid;grid-template-columns:1.15fr .85fr;gap:15px;margin-top:15px}
+@media(max-width:900px){.lower{grid-template-columns:1fr}}
+.card{padding:15px}.card h3{margin:0 0 8px}.card p{line-height:1.45;margin:.45em 0;color:#dce9f7}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:12px}
+@media(max-width:700px){.steps{grid-template-columns:1fr}}
+.step{background:#10253c;padding:11px;border-radius:11px;border:1px solid #203d59}.step strong{display:block;color:var(--gold);margin-bottom:4px}
+.challenge{border-left:4px solid var(--gold)}.answer{display:none;background:#10253c;border-radius:10px;padding:10px;margin-top:10px}.answer.show{display:block}
+.note{margin-top:15px;background:rgba(6,16,28,.8);border:1px solid #1b344e;border-radius:12px;padding:11px;color:var(--muted);font-size:.84rem;line-height:1.42}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <h1>Why We Have Seasons</h1>
+    <div class="subtitle">
+      Earth travels around the Sun while its 23.5° axial tilt keeps nearly the same orientation relative to the distant stars. That changes both sunlight angle and daylight duration during the year.
+    </div>
+  </div>
+  <div class="badge">Astronomy • Seasons concept model • Version 5</div>
+</header>
+
+<div class="callout">
+  <b>Central idea:</b> Earth's axis does not “flop” back and forth during the year. It stays nearly parallel to itself in space. As Earth moves around the Sun, each hemisphere alternately tilts toward and away from the Sun.
+</div>
+
+<section class="controls">
+  <div class="controlgrid">
+    <div>
+      <label for="orbit">Position in Earth's orbit: <span id="dateLabel" class="value"></span></label>
+      <input id="orbit" type="range" min="0" max="365" value="172" step="1">
+      <div class="small">The orbit is shown nearly edge-on. June is at the left, December at the right; September passes in front of the Sun and March passes behind it. The eye symbol follows Earth along its orbit and shows the moving viewpoint used in Pane 2.</div>
+    </div>
+    <div class="buttons">
+      <button id="march">March equinox</button>
+      <button id="june" class="primary">June solstice</button>
+      <button id="sept">September equinox</button>
+      <button id="dec">December solstice</button>
+    </div>
+  </div>
+</section>
+
+<div class="main">
+<section class="panel">
+  <h2>1. Orbit view — ecliptic nearly edge-on</h2>
+  <div class="panelnote">Think of the orbit as a nearly horizontal sheet viewed from its edge. The small vertical oval is only a perspective cue for which part of the orbit is in front of or behind the Sun.</div>
+  <div class="canvaswrap"><canvas id="orbitCanvas"></canvas></div>
+  <div class="stats">
+    <div class="stat"><b>Axis tilt</b><span>23.5°</span></div>
+    <div class="stat"><b>Northern Hemisphere</b><span id="seasonStat"></span></div>
+    <div class="stat"><b>Axis orientation</b><span>fixed in space</span></div>
+  </div>
+  <div class="legend">
+    <span><span class="dot" style="background:#ffd166"></span>sunlight</span>
+    <span><span class="dot" style="background:#76c6ff"></span>Earth</span>
+    <span><span class="dot" style="background:#8ee3b0"></span>rotation axis / fixed-star direction</span>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>2. Earth view — comparison of sunlight and daylight</h2>
+  <div class="panelnote"><b>Important:</b> this is the view from a camera following Earth along its orbit (shown by the eye in Pane 1) and looking toward Earth. The camera turns as it travels, so sunlight is kept coming from the left. Earth's axis itself does <b>not</b> change direction relative to the fixed stars.</div>
+  <div class="earthwrap"><canvas id="earthCanvas"></canvas></div>
+  <div class="legend">
+    Orange marks a mid-northern latitude. Higher Sun angle concentrates energy over a smaller area; longer daylight provides more time for heating.
+  </div>
+</section>
+</div>
+
+<div class="lower">
+<section class="card">
+  <h3>What to watch</h3>
+  <p id="explain"></p>
+  <div class="steps">
+    <div class="step"><strong>1. Follow the green axis</strong>In Pane 1 it keeps the same direction all year, even as Earth moves from one side of the Sun to the other. The eye shows that Pane 2's viewing direction is the part that changes.</div>
+    <div class="step"><strong>2. Compare June and December</strong>At June the Northern Hemisphere tilts toward the Sun; at December it tilts away. Notice which half of Earth is illuminated.</div>
+    <div class="step"><strong>3. Use Pane 2 as a comparison view</strong>The moving camera follows Earth along the orbit, so its perspective rotates through the year. Use Pane 2 to compare Sun angle and daylight while remembering that the physical axis remains fixed in space.</div>
+  </div>
+</section>
+
+<section class="card challenge">
+  <h3>Misconception check</h3>
+  <p>Earth is closest to the Sun in early January. Why is January still winter in Minnesota but summer in Australia?</p>
+  <button id="reveal">Reveal answer</button>
+  <div id="answer" class="answer">
+    The seasons are controlled mainly by <b>axial tilt</b>. In January the Northern Hemisphere is tilted away from the Sun, giving lower Sun angles and shorter days, while the Southern Hemisphere is tilted toward the Sun. The small change in Earth–Sun distance is not the cause of the seasons.
+  </div>
+</section>
+</div>
+
+<div class="note">
+  <b>Model limits:</b> This is a two-dimensional representation of a three-dimensional situation. Pane 1 deliberately shows the ecliptic nearly edge-on so the 23.5° axial tilt is easy to compare with the orbital plane. Pane 2 is a moving, rotated comparison view from a point following Earth in its orbit, not the same fixed camera angle as Pane 1. Earth's size, the Sun's size, and orbital distances are not to scale.
+</div>
+</div>
+
+<script>
+const D2R=Math.PI/180;
+const orbit=document.getElementById("orbit");
+const oCanvas=document.getElementById("orbitCanvas"),eCanvas=document.getElementById("earthCanvas");
+const octx=oCanvas.getContext("2d"),ectx=eCanvas.getContext("2d");
+
+function fit(canvas,ctx){
+  const r=canvas.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
+  canvas.width=Math.max(10,Math.round(r.width*dpr));canvas.height=Math.max(10,Math.round(r.height*dpr));
+  ctx.setTransform(dpr,0,0,dpr,0,0);return{w:r.width,h:r.height};
+}
+function stars(ctx,w,h,n=180){
+  ctx.fillStyle="#020711";ctx.fillRect(0,0,w,h);
+  for(let i=0;i<n;i++){
+    const x=Math.abs((Math.sin(i*17.13)*9317.7)%1)*w,y=Math.abs((Math.sin(i*41.71)*7132.3)%1)*h;
+    ctx.globalAlpha=.28+((i*31)%55)/100;ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(x,y,i%13===0?1.5:.75,0,Math.PI*2);ctx.fill();
+  }ctx.globalAlpha=1;
+}
+function arrow(ctx,x1,y1,x2,y2,color,width=2,head=8){
+  const a=Math.atan2(y2-y1,x2-x1);ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=width;
+  ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(x2,y2);ctx.lineTo(x2-head*Math.cos(a-.45),y2-head*Math.sin(a-.45));ctx.lineTo(x2-head*Math.cos(a+.45),y2-head*Math.sin(a+.45));ctx.closePath();ctx.fill();
+}
+function clamp(x,a,b){return Math.max(a,Math.min(b,x))}
+function dateText(day){
+  const d=new Date(2026,0,1);d.setDate(day+1);
+  return d.toLocaleDateString("en-US",{month:"short",day:"numeric"});
+}
+function season(day){
+  const x=((day-172)%365+365)%365;
+  if(x<46)return"Summer"; if(x<137)return"Autumn"; if(x<228)return"Winter"; if(x<319)return"Spring"; return"Summer";
+}
+function seasonalFactor(day){return Math.cos((day-172)/365*2*Math.PI)}
+function dayLength(day){return 12+3.6*seasonalFactor(day)}
+function noonAltitude(day){return 45+23.5*seasonalFactor(day)}
+
+function drawSun(ctx,cx,cy,r){
+  const g=ctx.createRadialGradient(cx-r*.2,cy-r*.2,2,cx,cy,r*1.8);
+  g.addColorStop(0,"#fffbd1");g.addColorStop(.42,"#ffd765");g.addColorStop(.72,"#f3a21c");g.addColorStop(1,"rgba(243,162,28,0)");
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,r*1.8,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle="#ffd65f";ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();
+}
+
+function earthPoint(day,cx,cy,rx,ry){
+  // June left, Dec right, Sep in front (lower), Mar behind (upper)
+  const th=2*Math.PI*(day-172)/365 + Math.PI;
+  return {x:cx+Math.cos(th)*rx, y:cy-Math.sin(th)*ry, th};
+}
+function makeEarthPhaseSprite(th,size=140){
+  // 3-D orbital coordinates for the edge-on camera:
+  // X is horizontal on the page; +Z points toward the viewer.
+  // September has +Z (Earth in front of Sun), March has -Z (behind Sun).
+  const ex=Math.cos(th), ez=-Math.sin(th);
+  const lx=-ex, lz=-ez; // unit direction from Earth toward Sun
+  const c=document.createElement("canvas");c.width=size;c.height=size;
+  const ictx=c.getContext("2d"),img=ictx.createImageData(size,size),d=img.data;
+  const mid=(size-1)/2,rad=size*.47;
+  for(let py=0;py<size;py++){
+    for(let px=0;px<size;px++){
+      const u=(px-mid)/rad, v=(py-mid)/rad, rr=u*u+v*v;
+      if(rr>1) continue;
+      const nz=Math.sqrt(1-rr);
+      const dot=u*lx+nz*lz;
+      const k=(py*size+px)*4;
+      const limb=.68+.32*nz;
+      if(dot>0){
+        const light=.62+.38*Math.min(1,dot*.95+.18);
+        d[k]=Math.round(50*light*limb);
+        d[k+1]=Math.round(151*light*limb);
+        d[k+2]=Math.round(215*light*limb);
+        d[k+3]=255;
+      }else{
+        d[k]=5;d[k+1]=18;d[k+2]=32;d[k+3]=255;
+      }
+    }
+  }
+  ictx.putImageData(img,0,0);
+  return c;
+}
+function drawEarthBody(ctx,x,y,r,th,label){
+  const sprite=makeEarthPhaseSprite(th);
+  ctx.drawImage(sprite,x-r,y-r,2*r,2*r);
+  ctx.strokeStyle="#d9f0ff";ctx.lineWidth=1.1;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.stroke();
+
+  // Fixed physical axis on screen: 23.5° from vertical, always same direction.
+  const a=-66.5*D2R,ax=Math.cos(a),ay=Math.sin(a);
+  ctx.strokeStyle="#8ee3b0";ctx.lineWidth=3;
+  ctx.beginPath();ctx.moveTo(x-ax*r*1.6,y-ay*r*1.6);ctx.lineTo(x+ax*r*1.6,y+ay*r*1.6);ctx.stroke();
+  ctx.fillStyle="#8ee3b0";ctx.font="bold 10px system-ui";ctx.textAlign="center";
+  ctx.fillText("N",x+ax*r*1.88,y+ay*r*1.88);ctx.fillText("S",x-ax*r*1.88,y-ay*r*1.88);
+  if(label){ctx.fillStyle="#dceeff";ctx.font="bold 11px system-ui";ctx.fillText(label,x,y+r+18)}
+}
+function drawEye(ctx,x,y,lookX,lookY){
+  const ang=Math.atan2(lookY-y,lookX-x);
+  ctx.save();ctx.translate(x,y);ctx.rotate(ang);
+  ctx.fillStyle="#f4f7fb";ctx.strokeStyle="#9db2c5";ctx.lineWidth=1.4;
+  ctx.beginPath();ctx.ellipse(0,0,13,8,0,0,Math.PI*2);ctx.fill();ctx.stroke();
+  ctx.fillStyle="#76c6ff";ctx.beginPath();ctx.arc(2,0,4.2,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle="#071423";ctx.beginPath();ctx.arc(3,0,2,0,Math.PI*2);ctx.fill();
+  ctx.restore();
+}
+function drawOrbit(){
+  const {w,h}=fit(oCanvas,octx);stars(octx,w,h,210);
+  const cx=w/2,cy=h*.50,day=+orbit.value,rx=w*.38,ry=h*.085,er=Math.min(w,h)*.05;
+  const current=earthPoint(day,cx,cy,rx,ry);
+
+  // Diagram legend for the moving viewpoint used by Pane 2.
+  drawEye(octx,38,34,62,34);
+  octx.fillStyle="#c7d6e4";octx.font="10px system-ui";octx.textAlign="left";
+  octx.fillText("point of perspective for 2. Earth View",58,38);
+
+  // Fixed-star reference axis
+  const aa=-66.5*D2R,ax=Math.cos(aa),ay=Math.sin(aa);
+  octx.save();octx.setLineDash([6,5]);octx.strokeStyle="rgba(142,227,176,.42)";
+  octx.beginPath();octx.moveTo(28,h-34);octx.lineTo(28+ax*120,h-34+ay*120);octx.stroke();octx.restore();
+  octx.fillStyle="#9bc8ad";octx.font="10px system-ui";octx.textAlign="left";octx.fillText("fixed direction toward distant stars",36,h-23);
+
+  // Back half of orbit: March side, behind Sun
+  octx.strokeStyle="rgba(77,106,132,.42)";octx.lineWidth=2;octx.setLineDash([5,5]);
+  octx.beginPath();octx.ellipse(cx,cy,rx,ry,0,Math.PI,2*Math.PI);octx.stroke();
+  octx.setLineDash([]);
+
+  // Draw Earth first if on back half so Sun visually passes in front of it.
+  const front = Math.sin(current.th) < 0;
+  if(!front){
+    drawEarthBody(octx,current.x,current.y,er,current.th,dateText(day));
+  }
+
+  drawSun(octx,cx,cy,Math.min(w,h)*.065);
+
+  // Front half of orbit
+  octx.strokeStyle="#41627d";octx.lineWidth=2.3;
+  octx.beginPath();octx.ellipse(cx,cy,rx,ry,0,0,Math.PI);octx.stroke();
+
+  // Four seasonal positions / labels
+  const marks=[
+    {d:79,t:"March equinox",short:"Mar",place:"behind Sun"},
+    {d:172,t:"June solstice",short:"Jun",place:"left"},
+    {d:266,t:"September equinox",short:"Sep",place:"in front of Sun"},
+    {d:355,t:"December solstice",short:"Dec",place:"right"}
+  ];
+  for(const m of marks){
+    const p=earthPoint(m.d,cx,cy,rx,ry);
+    octx.fillStyle="#88a4bc";octx.beginPath();octx.arc(p.x,p.y,3,0,Math.PI*2);octx.fill();
+    octx.font="10px system-ui";octx.textAlign="center";octx.fillText(m.short,p.x,p.y+(m.d===266?18:-11));
+  }
+
+  // Draw current Earth after Sun when on front half.
+  if(front){
+    drawEarthBody(octx,current.x,current.y,er,current.th,dateText(day));
+  }
+
+  // Pane 2 viewpoint: a camera/eye FOLLOWING Earth in the counter-clockwise orbit.
+  // Using an earlier orbital date places it slightly behind Earth along the direction of travel.
+  const eye=earthPoint(day-11,cx,cy,rx,ry);
+
+  // Depth coordinate for this edge-on projection: +z is toward the viewer.
+  const earthZ=-Math.sin(current.th);
+  const eyeZ=-Math.sin(eye.th);
+  const projectedSep=Math.hypot(eye.x-current.x,eye.y-current.y);
+  const eyeBehindEarth=(eyeZ < earthZ);
+  const eyeOccluded=eyeBehindEarth && projectedSep < er*1.18;
+
+  if(!eyeOccluded){
+    octx.save();octx.setLineDash([4,4]);octx.strokeStyle="rgba(195,214,231,.45)";
+    octx.beginPath();octx.moveTo(eye.x,eye.y);octx.lineTo(current.x,current.y);octx.stroke();octx.restore();
+    drawEye(octx,eye.x,eye.y,current.x,current.y);
+    octx.fillStyle="#c7d6e4";octx.font="9px system-ui";octx.textAlign="center";
+    octx.fillText("Pane 2 viewpoint",eye.x,eye.y-14);
+  }
+
+  // Rays between Sun and Earth, especially clear at June/December
+  const vx=current.x-cx,vy=current.y-cy,L=Math.hypot(vx,vy),ux=vx/L,uy=vy/L,px=-uy,py=ux;
+  for(const off of [-1.0,-.5,0,.5,1.0]){
+    const sx=cx+ux*Math.min(w,h)*.09+px*er*off;
+    const sy=cy+uy*Math.min(w,h)*.09+py*er*off;
+    const ex=current.x-ux*er*1.1+px*er*off;
+    const ey=current.y-uy*er*1.1+py*er*off;
+    octx.globalAlpha=off===0?.88:.42;
+    arrow(octx,sx,sy,ex,ey,"#ffd166",off===0?2:1.1,6);
+  }octx.globalAlpha=1;
+
+  // Ecliptic plane reference
+  octx.save();octx.setLineDash([7,5]);octx.strokeStyle="rgba(178,196,214,.25)";
+  octx.beginPath();octx.moveTo(cx-rx-15,cy);octx.lineTo(cx+rx+15,cy);octx.stroke();octx.restore();
+  octx.fillStyle="#8fa8bf";octx.font="10px system-ui";octx.textAlign="right";octx.fillText("ecliptic plane (edge-on)",w-18,cy-7);
+
+  // View-direction labels
+  octx.fillStyle="#9ab0c4";octx.font="10px system-ui";octx.textAlign="center";
+  octx.fillText("March: behind Sun",cx,cy-ry-23);
+  octx.fillText("September: in front of Sun",cx,cy+ry+31);
+}
+
+function drawEarthView(){
+  const {w,h}=fit(eCanvas,ectx);stars(ectx,w,h,145);
+  const day=+orbit.value,fac=seasonalFactor(day),sunAlt=noonAltitude(day),dl=dayLength(day);
+  const cx=w*.50,cy=h*.50,R=Math.min(w,h)*.27;
+
+  // Pane 2 deliberately rotates the camera: sunlight always left -> right
+  for(const off of [-.78,-.39,0,.39,.78]){
+    const y=cy+off*R;
+    ectx.globalAlpha=off===0?.9:.46;
+    arrow(ectx,20,y,cx-R*1.04,y,"#ffd166",off===0?2:1.15,6);
+  }ectx.globalAlpha=1;
+  ectx.fillStyle="#ffd166";ectx.font="bold 11px system-ui";ectx.textAlign="left";
+  ectx.fillText("sunlight direction in this rotated comparison view",20,cy-R-20);
+
+  // Camera-relative axis: June N tilted left; December N tilted right; at equinox mostly into/out of page.
+  // We show only the projected component plus an out-of-page cue.
+  const proj=23.5*fac;
+  const a=(-90 - proj)*D2R,ax=Math.cos(a),ay=Math.sin(a);
+
+  const g=ectx.createRadialGradient(cx-R*.3,cy-R*.3,3,cx,cy,R);
+  g.addColorStop(0,"#8dd7ff");g.addColorStop(.65,"#267eb6");g.addColorStop(1,"#0f4269");
+  ectx.fillStyle=g;ectx.beginPath();ectx.arc(cx,cy,R,0,Math.PI*2);ectx.fill();
+  ectx.save();ectx.beginPath();ectx.arc(cx,cy,R,0,Math.PI*2);ectx.clip();ectx.fillStyle="rgba(0,0,18,.60)";ectx.fillRect(cx,cy-R,R,R*2);ectx.restore();
+  ectx.strokeStyle="#d9f0ff";ectx.lineWidth=1.2;ectx.beginPath();ectx.arc(cx,cy,R,0,Math.PI*2);ectx.stroke();
+
+  // axis
+  ectx.strokeStyle="#8ee3b0";ectx.lineWidth=3;
+  ectx.beginPath();ectx.moveTo(cx-ax*R*1.28,cy-ay*R*1.28);ectx.lineTo(cx+ax*R*1.28,cy+ay*R*1.28);ectx.stroke();
+  ectx.fillStyle="#8ee3b0";ectx.font="bold 11px system-ui";ectx.textAlign="center";
+  ectx.fillText("N",cx+ax*R*1.45,cy+ay*R*1.45);ectx.fillText("S",cx-ax*R*1.45,cy-ay*R*1.45);
+
+  // fixed-star direction alongside axis
+  const fx=w*.84,fy=h*.22;
+  arrow(ectx,fx-ax*38,fy-ay*38,fx+ax*38,fy+ay*38,"rgba(142,227,176,.75)",2,7);
+  ectx.fillStyle="#9bd5af";ectx.font="10px system-ui";ectx.textAlign="center";
+  ectx.fillText("same fixed-star axis direction",fx,fy+56);
+
+  // Near the equinoxes the projected axis looks nearly vertical in this 2-D view,
+  // but the real 23.5° tilt also has an into/out-of-page component.
+  if(Math.abs(fac)<.20){
+    const nearSeptember = day>170 && day<330;
+    ectx.fillStyle="#c7d6e4";
+    ectx.font="10px system-ui";
+    ectx.fillText(
+      nearSeptember ? "North pole angled away from viewer" : "North pole angled toward viewer",
+      fx,fy+72
+    );
+  }
+
+  // Mid-northern latitude (~45° N) at local noon.
+  // Build the surface normal from the projected axis plus a sunward equatorial direction.
+  const lat=45*D2R;
+  let exv=ay, eyv=-ax; // perpendicular to axis
+  if(exv>0){exv=-exv;eyv=-eyv;} // choose the equatorial direction facing the Sun (left)
+  const nx=Math.cos(lat)*exv+Math.sin(lat)*ax;
+  const ny=Math.cos(lat)*eyv+Math.sin(lat)*ay;
+  const mx=cx+R*nx,my=cy+R*ny;
+  ectx.fillStyle="#ffb36b";ectx.beginPath();ectx.arc(mx,my,5,0,Math.PI*2);ectx.fill();
+
+  // Local surface tangent is always perpendicular to the surface normal.
+  const tx=-ny,ty=nx;
+  ectx.strokeStyle="#ffb36b";ectx.lineWidth=2;
+  ectx.beginPath();ectx.moveTo(mx-tx*31,my-ty*31);ectx.lineTo(mx+tx*31,my+ty*31);ectx.stroke();
+
+  // A local sunlight ray ending at the Minnesota-like latitude marker.
+  arrow(ectx,mx-92,my,mx-9,my,"#ffd166",2.2,7);
+
+  // Solar altitude follows directly from the angle between the local vertical and sunlight.
+  const geometricSunAlt=Math.asin(clamp(-nx,-1,1))/D2R;
+
+  // The orange tangent above is the local surface direction; no second surface-area line is drawn.
+
+  ectx.textAlign="left";
+  ectx.fillStyle="#f6d490";ectx.font="bold 12px system-ui";
+  ectx.fillText(`Conceptual noon Sun altitude ≈ ${Math.round(geometricSunAlt)}°`,58,h-58);
+  ectx.fillStyle="#b9cde1";ectx.font="11px system-ui";
+  ectx.fillText(`Conceptual duration of daylight ≈ ${dl.toFixed(1)} h`,58,h-38);
+
+  // day length bar
+  const bx=w*.69,by=h*.77,bw=w*.24,bh=14;
+  ectx.fillStyle="rgba(255,255,255,.12)";ectx.fillRect(bx,by,bw,bh);
+  ectx.fillStyle="#ffd166";ectx.fillRect(bx,by,bw*(dl/24),bh);
+  ectx.strokeStyle="#698199";ectx.strokeRect(bx,by,bw,bh);
+  ectx.fillStyle="#dceeff";ectx.font="10px system-ui";ectx.textAlign="center";
+  ectx.fillText("fraction of 24 h in daylight",bx+bw/2,by+29);
+
+  if(Math.abs(fac)<.15){
+    ectx.fillStyle="#c4d3df";ectx.font="10px system-ui";ectx.textAlign="center";
+    ectx.fillText("Near an equinox, much of the true axial tilt points into/out of this 2-D comparison plane.",w/2,18);
+  }
+}
+function updateText(){
+  const day=+orbit.value,fac=seasonalFactor(day),sunAlt=noonAltitude(day),dl=dayLength(day);
+  document.getElementById("dateLabel").textContent=`${dateText(day)} — ${season(day)}`;
+  document.getElementById("seasonStat").textContent=season(day);
+
+  let relation;
+  if(Math.abs(fac)<.12) relation="neither hemisphere is strongly tilted toward the Sun";
+  else relation=`the Northern Hemisphere is tilted ${fac>0?"toward":"away from"} the Sun`;
+
+  document.getElementById("explain").innerHTML=
+    `On <b>${dateText(day)}</b>, ${relation}. `+
+    `At a mid-northern latitude, the conceptual noon Sun altitude is about <b>${Math.round(sunAlt)}°</b> and the conceptual duration of daylight is about <b>${dl.toFixed(1)} hours</b>. `+
+    `The important comparison is not Earth–Sun distance: it is how the fixed axial tilt changes <b>Sun angle</b> and <b>day length</b> through the year.`;
+}
+function render(){updateText();drawOrbit();drawEarthView()}
+orbit.addEventListener("input",render);
+document.getElementById("march").onclick=()=>{orbit.value=79;render()};
+document.getElementById("june").onclick=()=>{orbit.value=172;render()};
+document.getElementById("sept").onclick=()=>{orbit.value=266;render()};
+document.getElementById("dec").onclick=()=>{orbit.value=355;render()};
+document.getElementById("reveal").onclick=()=>document.getElementById("answer").classList.toggle("show");
+window.addEventListener("resize",render);
+render();
+</script>
+</body>
+</html>
